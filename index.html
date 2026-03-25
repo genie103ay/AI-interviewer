@@ -811,6 +811,10 @@ PACING & FLOW
         </svg>
       </button>
     </div>
+    <div id="endInterviewArea" style="display:none; padding: 14px; background: var(--white); border: 1.5px solid var(--border); border-top: none; border-radius: 0 0 12px 12px; text-align: center;">
+      <p style="font-size: 0.82rem; color: var(--muted); margin-bottom: 10px;">The interview is now complete. Take your time reading the message above.</p>
+      <button onclick="showCompletion()" style="background: var(--success); color: white; border: none; border-radius: 8px; padding: 10px 28px; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer;">I have finished reading →</button>
+    </div>
   </div>
 
   <!-- Completion -->
@@ -1009,17 +1013,15 @@ INSTRUCTIONS:
     conversationHistory.push({ role: 'assistant', content: reply });
     appendMessage('assistant', reply);
 
-    // Check for completion signal
+   // Check for completion signal
     const lower = reply.toLowerCase();
     if ((lower.includes('thank you') && lower.includes('complete')) ||
         lower.includes('interview is now complete') ||
         lower.includes("that's all") && lower.includes('thank')) {
-      setTimeout(() => {
-        document.getElementById('chatUI').classList.add('hidden');
-        document.getElementById('completionScreen').classList.remove('hidden');
-      }, 3000);
+      document.getElementById('chatInput').disabled = true;
+      document.getElementById('sendBtn').disabled = true;
+      document.getElementById('endInterviewArea').style.display = 'block';
     }
-
     isWaiting = false;
     input.disabled = false;
     document.getElementById('sendBtn').disabled = false;
@@ -1097,11 +1099,9 @@ INSTRUCTIONS:
     document.getElementById('typingIndicator')?.remove();
   }
 
-  function handleKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+  function showCompletion() {
+    document.getElementById('chatUI').classList.add('hidden');
+    document.getElementById('completionScreen').classList.remove('hidden');
   }
   function autoResize(el) {
     el.style.height = 'auto';
