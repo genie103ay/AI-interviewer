@@ -677,7 +677,10 @@
         <button class="remove-btn" onclick="removeQuestion(this)">✕</button>
       </div>
     </div>
-    <button class="add-question-btn" onclick="addQuestion()">+ Add question</button>
+    <div style="display:flex; gap:10px; margin-top:10px;">
+      <button class="add-question-btn" onclick="addQuestion()" style="flex:1;">+ Add question</button>
+      <button class="add-question-btn" onclick="openBulkModal()" style="flex:1;">⇩ Bulk input</button>
+    </div>
   </div>
 
   <div class="form-section">
@@ -842,6 +845,54 @@ PACING & FLOW
   }
 
   // ── Researcher: add/remove questions ──
+  function openBulkModal() {
+    const modal = document.getElementById('bulkModal');
+    modal.style.display = 'flex';
+    document.getElementById('bulkPasteInput').focus();
+  }
+
+  function closeBulkModal() {
+    document.getElementById('bulkModal').style.display = 'none';
+    document.getElementById('bulkPasteInput').value = '';
+  }
+
+  function splitQuestions() {
+    const raw = document.getElementById('bulkPasteInput').value.trim();
+    if (!raw) return;
+
+    const lines = raw.split(/\n/);
+    const questions = [];
+
+    lines.forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+
+      const stripped = trimmed.replace(/^[\s\d\.\)\(\]\[•\-\*\→\◆\❯\►\▶\–\—\·\※\✓\✔\☐\☑\➤\➢\➣\➔\▸\‣\⁃\∙\○\●\■\□\★\✦\+\>\|]+/, '').trim();
+
+      if (stripped) questions.push(stripped);
+    });
+
+    if (questions.length === 0) {
+      alert('No questions detected. Please make sure each question is on its own line.');
+      return;
+    }
+
+    const list = document.getElementById('questionsList');
+    const existingCount = list.children.length;
+    questions.forEach((q, i) => {
+      const row = document.createElement('div');
+      row.className = 'question-row';
+      row.innerHTML = `
+        <div class="q-number">${existingCount + i + 1}</div>
+        <textarea placeholder="Type your question here…" rows="2">${q}</textarea>
+        <button class="remove-btn" onclick="removeQuestion(this)">✕</button>`;
+      list.appendChild(row);
+    });
+
+    renumberQuestions();
+    closeBulkModal();
+  }
+
   function addQuestion() {
     const list = document.getElementById('questionsList');
     const n = list.children.length + 1;
@@ -1122,5 +1173,18 @@ INSTRUCTIONS:
     el.style.height = Math.min(el.scrollHeight, 120) + 'px';
   }
 </script>
+
+<div id="bulkModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:var(--white); border-radius:14px; padding:28px; width:90%; max-width:560px;">
+    <h3 style="font-family:'DM Serif Display',serif; font-size:1.2rem; margin-bottom:6px;">Bulk input questions</h3>
+    <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Paste your questions below — one per line, in any format (numbered, bulleted, or plain lines).</p>
+    <textarea id="bulkPasteInput" rows="10" style="width:100%; font-family:'DM Sans',sans-serif; font-size:0.88rem; padding:10px 14px; border:1.5px solid var(--border); border-radius:8px; background:var(--chat-bg); resize:vertical;" placeholder="e.g. 1. Can you walk me through your payroll process?"></textarea>
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+      <button onclick="closeBulkModal()" style="background:none; border:1.5px solid var(--border); border-radius:8px; padding:9px 20px; font-family:'DM Sans',sans-serif; font-size:0.85rem; color:var(--muted); cursor:pointer;">Cancel</button>
+      <button onclick="splitQuestions()" style="background:var(--ink); color:white; border:none; border-radius:8px; padding:9px 20px; font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:600; cursor:pointer;">Add questions</button>
+    </div>
+  </div>
+</div>
+  
 </body>
 </html>
