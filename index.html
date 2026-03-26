@@ -1012,7 +1012,7 @@ INSTRUCTIONS:
 
     conversationHistory.push({ role: 'assistant', content: reply });
     appendMessage('assistant', reply);
-
+  
   // Check for completion signal — only trigger after at least 4 exchanges
     const lower = reply.toLowerCase();
     const enoughExchanges = conversationHistory.length >= 4;
@@ -1027,7 +1027,13 @@ INSTRUCTIONS:
       interviewComplete = true;
       document.getElementById('chatInput').placeholder = 'Type EXIT to close the interview…';
     }
-    
+
+    isWaiting = false;
+    input.disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    input.focus();
+  }
+  
   // ── Claude API call ──
   async function askClaude(systemPrompt, history, isOpening = false) {
     try {
