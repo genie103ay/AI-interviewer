@@ -879,6 +879,14 @@ PACING & FLOW
     }
 
     const list = document.getElementById('questionsList');
+
+    // Remove empty placeholder rows first
+    [...list.querySelectorAll('.question-row')].forEach(row => {
+      const textarea = row.querySelector('textarea');
+      if (!textarea.value.trim()) row.remove();
+    });
+
+    // Now append the new questions after any remaining filled ones
     const existingCount = list.children.length;
     questions.forEach((q, i) => {
       const row = document.createElement('div');
