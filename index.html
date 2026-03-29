@@ -638,7 +638,33 @@
   </div>
 
   <div class="form-section">
-    <h3>📋 Study Details</h3>
+    <h3>🧠 Claude Context</h3>
+    <p class="section-hint">This is only seen by the AI interviewer — not participants. The more detail you provide, the smarter Claude will probe.</p>
+
+    <label>Research Objectives <span style="color:var(--accent);">*</span></label>
+    <textarea id="researchObjectives" rows="3" placeholder="e.g. Understand the specific pain points SME owners face when managing payroll — particularly around time, errors, compliance anxiety, and tool frustration."></textarea>
+
+    <label>Hypotheses <span style="color:var(--muted);font-size:0.75rem;font-weight:400;text-transform:none;">(optional)</span></label>
+    <textarea id="researchHypotheses" rows="3" placeholder="e.g. We hypothesise that manual data entry is the biggest source of payroll errors for SMEs with fewer than 20 employees."></textarea>
+
+    <label>Known Participant Context <span style="color:var(--muted);font-size:0.75rem;font-weight:400;text-transform:none;">(optional)</span></label>
+    <textarea id="participantContext" rows="2" placeholder="e.g. All participants are SME owners or managers responsible for payroll, with between 5 and 50 employees."></textarea>
+
+    <label>Topics to Probe Deeply <span style="color:var(--muted);font-size:0.75rem;font-weight:400;text-transform:none;">(optional)</span></label>
+    <textarea id="probeTopics" rows="2" placeholder="e.g. Moments of stress or anxiety around payroll deadlines. Workarounds participants have invented. Any mention of compliance or ATO."></textarea>
+
+    <label>Sensitive Areas <span style="color:var(--muted);font-size:0.75rem;font-weight:400;text-transform:none;">(optional)</span></label>
+    <textarea id="sensitiveAreas" rows="2" placeholder="e.g. Avoid probing on specific financial figures or personal tax situations. Handle any mention of business failure with care."></textarea>
+
+    <label>What Good Data Looks Like <span style="color:var(--muted);font-size:0.75rem;font-weight:400;text-transform:none;">(optional)</span></label>
+    <textarea id="goodData" rows="2" placeholder="e.g. Specific stories and real examples from their own experience — not general opinions. Emotional language about pain points is particularly valuable."></textarea>
+
+    <label>What to Watch For <span style="color:var(--muted);font-size:0.75rem;font-weight:400;text-transform:none;">(optional)</span></label>
+    <textarea id="watchFor" rows="2" placeholder="e.g. Any mention of switching tools, hiring an accountant, or nearly missing a payroll run — these signal high pain and should be explored further."></textarea>
+  </div>
+
+  <div class="form-section">
+    <h3>📋 Study Details (What participants see)</h3>
     <p class="section-hint">This appears on the participant's welcome screen.</p>
     <label>Study Title</label>
     <input type="text" id="studyTitle" placeholder="e.g. Understanding How People Manage Daily Tasks" />
@@ -931,17 +957,25 @@ PACING & FLOW
     const researcher = document.getElementById('researcherName').value.trim();
     const interviewerName = document.getElementById('interviewerName').value.trim() || 'Alex';
     const tone = document.getElementById('interviewerTone').value.trim();
+    const researchObjectives = document.getElementById('researchObjectives').value.trim();
+    const researchHypotheses = document.getElementById('researchHypotheses').value.trim();
+    const participantContext = document.getElementById('participantContext').value.trim();
+    const probeTopics = document.getElementById('probeTopics').value.trim();
+    const sensitiveAreas = document.getElementById('sensitiveAreas').value.trim();
+    const goodData = document.getElementById('goodData').value.trim();
+    const watchFor = document.getElementById('watchFor').value.trim();
 
     const questions = [...document.querySelectorAll('#questionsList textarea')]
       .map(t => t.value.trim()).filter(Boolean);
     const consentText = document.getElementById('consentText').value.trim();
 
     if (!apiKey) { alert('Please enter your Anthropic API key.'); return; }
+    if (!researchObjectives) { alert('Please add your Research Objectives in the Claude Context section.'); return; }
     if (!title) { alert('Please add a study title.'); return; }
     if (questions.length === 0) { alert('Please add at least one interview question.'); return; }
     if (!consentText) { alert('Please add a consent statement.'); return; }
 
-    study = { apiKey, title, purpose, duration, researcher, interviewerName, tone, questions, consentText };
+    study = { apiKey, title, purpose, duration, researcher, interviewerName, tone, questions, consentText, researchObjectives, researchHypotheses, participantContext, probeTopics, sensitiveAreas, goodData, watchFor };
 
     // Reset interview state
     conversationHistory = [];
@@ -1026,24 +1060,39 @@ PACING & FLOW
   // ── Build system prompt ──
   function buildSystemPrompt() {
     const qs = study.questions.map((q, i) => `${i + 1}. ${q}`).join('\n');
+
+    const optionalContext = [
+      study.researchHypotheses ? `HYPOTHESES:\n${study.researchHypotheses}` : '',
+      study.participantContext ? `KNOWN PARTICIPANT CONTEXT:\n${study.participantContext}` : '',
+      study.probeTopics ? `TOPICS TO PROBE DEEPLY:\n${study.probeTopics}` : '',
+      study.sensitiveAreas ? `SENSITIVE AREAS — HANDLE WITH CARE:\n${study.sensitiveAreas}` : '',
+      study.goodData ? `WHAT GOOD DATA LOOKS LIKE:\n${study.goodData}` : '',
+      study.watchFor ? `WHAT TO WATCH FOR:\n${study.watchFor}` : '',
+    ].filter(Boolean).join('\n\n');
+
     return `You are ${study.interviewerName}, a skilled UX research interviewer. Your tone: ${study.tone || 'warm, curious, and professional'}.
 
 You are conducting a research interview about: "${study.title}".
-Research purpose: ${study.purpose || 'To understand user needs and experiences.'}
 
+RESEARCH OBJECTIVES (use these to guide all probing decisions):
+${study.researchObjectives}
+
+${optionalContext ? optionalContext + '\n' : ''}
 Your interview questions (ask in order):
 ${qs}
 
 INSTRUCTIONS:
-- Start with a warm, brief welcome (2-3 sentences) Mention that the interview will take approximately ${study.duration || '10–15 minutes'}. Then ask Question 1 naturally. Then ask Question 1 naturally.
+- Start with a warm, brief welcome (2-3 sentences). Mention that the interview will take approximately ${study.duration || '10–15 minutes'}. Then ask Question 1 naturally.
 - Ask ONE question at a time. Wait for a full response.
-- After each answer, DECIDE: does it warrant a follow-up probe? If yes, ask ONE natural follow-up (e.g. "Can you tell me more about that?" / "What made you feel that way?" / "What happened next?"). If the answer is already rich, move on.
-- Never ask more than one follow-up per question before moving on.
+- After each answer, assess it against the research objectives. If the answer reveals something directly relevant to the objectives that warrants deeper exploration, probe it before moving on. Otherwise move to the next question.
+- If an answer is vague, too short, or uses abstract language, probe once before moving on.
+- Never ask more than one follow-up probe per question.
 - Never lead or suggest answers. Stay neutral and curious.
+- If a sensitive area is mentioned, handle it with care and do not probe further into it.
 - After all ${study.questions.length} questions are answered, offer a warm closing. Thank the participant sincerely, and end with the exact phrase: "This interview is now complete. Type EXIT when you are ready to close."
-- Keep your messages conversational and concise — this is a chat, not an email.
-- Do NOT number your questions out loud (e.g. don't say "Question 1:"). Ask them naturally.
-- Track internally which question you're on. Once all are covered and probed, conclude.`;
+- Keep your messages conversational and concise — this is a chat, not an essay.
+- Do NOT number your questions out loud. Ask them naturally.
+- Track internally which question you are on. Once all are covered and probed, conclude.`;
   }
 
   // ── Send message ──
