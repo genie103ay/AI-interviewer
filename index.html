@@ -3,1246 +3,823 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UX Research Interviewer</title>
+<title>AI Interviewer — Researcher</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
 
-  :root {
-    --ink: #1a1a2e;
-    --paper: #f5f0e8;
-    --accent: #c4622d;
-    --accent-light: #f0ddd2;
-    --muted: #8a8580;
-    --border: #d8d0c4;
-    --white: #ffffff;
-    --success: #2d7a4f;
-    --chat-bg: #faf7f2;
-  }
+:root {
+  --ink: #1a1a2e;
+  --paper: #f5f0e8;
+  --accent: #c4622d;
+  --accent-light: #f0ddd2;
+  --muted: #8a8580;
+  --border: #d8d0c4;
+  --white: #ffffff;
+  --success: #2d7a4f;
+  --chat-bg: #faf7f2;
+  --danger: #c0392b;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--paper);
-    color: var(--ink);
-    min-height: 100vh;
-  }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+}
 
-  /* ── SHARED HEADER ── */
-  .app-header {
-    background: var(--ink);
-    color: var(--white);
-    padding: 14px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .app-header h1 {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.2rem;
-    letter-spacing: 0.01em;
-  }
-  .mode-badge {
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    background: var(--accent);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 20px;
-  }
+/* ── HEADER ── */
+.app-header {
+  background: var(--ink);
+  color: var(--white);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.app-header h1 { font-family: 'DM Serif Display', serif; font-size: 1.2rem; }
+.header-actions { display: flex; align-items: center; gap: 12px; }
+.badge {
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; background: var(--accent); color: white;
+  padding: 4px 10px; border-radius: 20px;
+}
 
-  /* ── VIEW TOGGLE ── */
-  .view-toggle {
-    display: flex;
-    gap: 0;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    width: fit-content;
-    margin: 24px auto 0;
-  }
-  .toggle-btn {
-    padding: 9px 22px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.82rem;
-    font-weight: 500;
-    border: none;
-    cursor: pointer;
-    background: var(--white);
-    color: var(--muted);
-    transition: all 0.2s;
-  }
-  .toggle-btn.active {
-    background: var(--ink);
-    color: white;
-  }
+/* ── BUTTONS ── */
+.btn {
+  font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600;
+  border-radius: 8px; padding: 9px 18px; cursor: pointer;
+  border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: #a8501f; }
+.btn-secondary { background: var(--white); color: var(--ink); border: 1.5px solid var(--border); }
+.btn-secondary:hover { border-color: var(--ink); }
+.btn-success { background: var(--success); color: white; }
+.btn-success:hover { background: #235f3d; }
+.btn-danger { background: none; color: var(--danger); border: 1.5px solid var(--danger); }
+.btn-danger:hover { background: #fdf5f5; }
+.btn-ghost { background: none; color: var(--muted); border: none; padding: 6px 10px; font-weight: 400; }
+.btn-ghost:hover { color: var(--ink); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  /* ══════════════════════════════
-     RESEARCHER SETUP VIEW
-  ══════════════════════════════ */
-  .setup-view {
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 32px 24px 80px;
-  }
-  .setup-intro {
-    text-align: center;
-    margin-bottom: 36px;
-  }
-  .setup-intro h2 {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2rem;
-    margin-bottom: 8px;
-  }
-  .setup-intro p {
-    color: var(--muted);
-    font-size: 0.9rem;
-  }
+/* ── VIEWS ── */
+.view { display: none; }
+.view.active { display: block; }
 
-  .form-section {
-    background: var(--white);
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 20px;
-  }
-  .form-section h3 {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.1rem;
-    margin-bottom: 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .section-hint {
-    font-size: 0.78rem;
-    color: var(--muted);
-    margin-bottom: 16px;
-  }
+/* ══════════════
+   DASHBOARD VIEW
+══════════════ */
+.dashboard {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+.dashboard-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+.dashboard-header h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+}
+.dashboard-header p { color: var(--muted); font-size: 0.88rem; margin-top: 4px; }
 
-  label {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 6px;
-    margin-top: 16px;
-  }
-  label:first-of-type { margin-top: 0; }
+.studies-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
-  input[type="text"], textarea, select {
-    width: 100%;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    padding: 10px 14px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    background: var(--chat-bg);
-    color: var(--ink);
-    transition: border-color 0.2s;
-    resize: vertical;
-  }
-  input[type="text"]:focus, textarea:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
+.study-card {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  transition: border-color 0.2s;
+}
+.study-card:hover { border-color: var(--ink); }
+.study-card-left { flex: 1; min-width: 0; }
+.study-card-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.study-card-meta { font-size: 0.78rem; color: var(--muted); display: flex; gap: 16px; }
+.study-card-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
-  /* Questions list */
-  .questions-list { display: flex; flex-direction: column; gap: 10px; }
-  .question-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .q-number {
-    min-width: 28px;
-    height: 28px;
-    background: var(--accent-light);
-    color: var(--accent);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 700;
-    margin-top: 8px;
-  }
-  .question-row textarea {
-    min-height: 60px;
-  }
-  .remove-btn {
-    background: none;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 1.1rem;
-    padding: 8px 4px;
-    margin-top: 4px;
-    transition: color 0.2s;
-  }
-  .remove-btn:hover { color: #c0392b; }
+.status-pill {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 3px 10px; border-radius: 20px;
+}
+.status-draft { background: #f0f0f0; color: var(--muted); }
+.status-live { background: #e8f5ee; color: var(--success); }
 
-  .add-question-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: none;
-    border: 1.5px dashed var(--border);
-    border-radius: 8px;
-    padding: 10px 16px;
-    width: 100%;
-    cursor: pointer;
-    color: var(--muted);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 500;
-    margin-top: 10px;
-    transition: all 0.2s;
-  }
-  .add-question-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: var(--accent-light);
-  }
+.empty-state {
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--muted);
+}
+.empty-state h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.4rem;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.empty-state p { margin-bottom: 24px; font-size: 0.9rem; }
 
-  /* Consent builder */
-  .consent-items { display: flex; flex-direction: column; gap: 8px; }
-  .consent-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--chat-bg);
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
-  }
-  .consent-item input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--accent);
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  .consent-item input[type="text"] {
-    border: none;
-    background: none;
-    padding: 0;
-    font-size: 0.88rem;
-  }
-  .consent-item input[type="text"]:focus { outline: none; }
+.loading-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
 
-  /* Generate button */
-  .generate-btn {
-    display: block;
-    width: 100%;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    padding: 16px;
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.1rem;
-    cursor: pointer;
-    margin-top: 24px;
-    transition: all 0.2s;
-    letter-spacing: 0.02em;
-  }
-  .generate-btn:hover { background: #a8501f; transform: translateY(-1px); }
-  .generate-btn:disabled { background: var(--border); cursor: not-allowed; transform: none; }
+/* ══════════════
+   SETUP VIEW
+══════════════ */
+.setup {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 24px 100px;
+}
+.setup-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.setup-header h2 { font-family: 'DM Serif Display', serif; font-size: 1.6rem; }
 
-  /* API key notice */
-  .api-notice {
-    background: #fff8e6;
-    border: 1.5px solid #f0c050;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 0.82rem;
-    color: #7a5a00;
-    margin-bottom: 20px;
-    line-height: 1.5;
-  }
-  .api-notice strong { display: block; margin-bottom: 2px; }
+.form-section {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.form-section h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.05rem;
+  margin-bottom: 4px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-hint { font-size: 0.78rem; color: var(--muted); margin-bottom: 16px; }
 
-  /* ══════════════════════════════
-     PARTICIPANT / INTERVIEW VIEW
-  ══════════════════════════════ */
-  .interview-view {
-    max-width: 680px;
-    margin: 0 auto;
-    padding: 32px 24px 80px;
-  }
+.field-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+  margin-top: 16px;
+}
+.field-label:first-of-type { margin-top: 0; }
+.field-label .optional {
+  font-size: 0.72rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0; color: var(--muted); margin-left: 4px;
+}
+.required-star { color: var(--accent); }
 
-  /* Consent screen */
-  .consent-screen {
-    background: var(--white);
-    border: 1.5px solid var(--border);
-    border-radius: 14px;
-    padding: 40px 36px 36px;
-    text-align: left;
-  }
-  .consent-org {
-    font-size: 0.72rem;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-  .consent-screen .study-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.9rem;
-    margin-bottom: 10px;
-    line-height: 1.2;
-  }
-  .consent-screen .study-purpose {
-    color: var(--muted);
-    font-size: 0.9rem;
-    margin-bottom: 6px;
-    line-height: 1.65;
-  }
-  .consent-duration {
-    font-size: 0.78rem;
-    color: var(--muted);
-    margin-bottom: 28px;
-  }
-  .consent-block {
-    background: var(--chat-bg);
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    padding: 20px 24px;
-    margin-bottom: 28px;
-  }
-  .consent-heading {
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 10px;
-  }
-  .consent-paragraph {
-    font-size: 0.88rem;
-    line-height: 1.75;
-    color: var(--ink);
-  }
-  .consent-question {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin-bottom: 12px;
-  }
-  .consent-options {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 24px;
-  }
-  .consent-option {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    padding: 14px 18px;
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-  }
-  .consent-option:has(input:checked) { border-color: var(--ink); background: #f5f0e8; }
-  .consent-option:has(input[value="agree"]:checked) { border-color: var(--success); background: #f0faf5; }
-  .consent-option:has(input[value="decline"]:checked) { border-color: #c0392b; background: #fdf5f5; }
-  .consent-option input[type="radio"] {
-    width: 17px; height: 17px;
-    accent-color: var(--success);
-    margin-top: 3px;
-    flex-shrink: 0;
-    cursor: pointer;
-  }
-  .option-content { display: flex; flex-direction: column; gap: 2px; }
-  .option-label { font-size: 0.9rem; font-weight: 600; }
-  .option-desc { font-size: 0.78rem; color: var(--muted); }
-  .declined-msg {
-    background: #fdf5f5;
-    border: 1.5px solid #f5c0c0;
-    border-radius: 8px;
-    padding: 14px 18px;
-    font-size: 0.88rem;
-    color: #7a2020;
-    margin-bottom: 20px;
-    line-height: 1.6;
-  }
-  .start-btn {
-    background: var(--ink);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    padding: 14px 40px;
-    font-family: 'DM Serif Display', serif;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: block;
-    width: 100%;
-    text-align: center;
-  }
-  .start-btn:hover { background: var(--accent); }
-  .start-btn:disabled { background: var(--border); cursor: not-allowed; }
+input[type="text"], textarea, select {
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--chat-bg);
+  color: var(--ink);
+  transition: border-color 0.2s;
+  resize: vertical;
+}
+input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--accent); }
 
-  /* Chat interface */
-  .chat-container {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 180px);
-    min-height: 500px;
-  }
-  .chat-header {
-    background: var(--white);
-    border: 1.5px solid var(--border);
-    border-radius: 12px 12px 0 0;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .interviewer-avatar {
-    width: 38px;
-    height: 38px;
-    background: var(--ink);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-family: 'DM Serif Display', serif;
-    font-size: 1rem;
-  }
-  .interviewer-info h4 { font-size: 0.9rem; font-weight: 600; }
-  .interviewer-info p { font-size: 0.75rem; color: var(--muted); }
+.api-notice {
+  background: #fff8e6;
+  border: 1.5px solid #f0c050;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 0.82rem;
+  color: #7a5a00;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
 
-  .chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    background: var(--chat-bg);
-    border-left: 1.5px solid var(--border);
-    border-right: 1.5px solid var(--border);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
+/* Questions */
+.questions-list { display: flex; flex-direction: column; gap: 10px; }
+.question-row { display: flex; align-items: flex-start; gap: 10px; }
+.q-number {
+  min-width: 28px; height: 28px;
+  background: var(--accent-light); color: var(--accent);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700; margin-top: 8px; flex-shrink: 0;
+}
+.question-row textarea { min-height: 60px; }
+.remove-btn {
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; font-size: 1.1rem; padding: 8px 4px;
+  margin-top: 4px; transition: color 0.2s;
+}
+.remove-btn:hover { color: var(--danger); }
 
-  .message {
-    display: flex;
-    gap: 10px;
-    animation: fadeUp 0.3s ease;
-  }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+.add-question-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: 1.5px dashed var(--border);
+  border-radius: 8px; padding: 10px 16px; width: 100%;
+  cursor: pointer; color: var(--muted);
+  font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500;
+  transition: all 0.2s;
+}
+.add-question-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 
-  .message.user { flex-direction: row-reverse; }
+/* Consent options */
+.consent-option-row {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 18px; border: 1.5px solid var(--border);
+  border-radius: 10px; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+}
+.consent-option-row:has(input:checked) { border-color: var(--success); background: #f0faf5; }
+.consent-option-row input[type="radio"] { width: 17px; height: 17px; accent-color: var(--success); margin-top: 3px; flex-shrink: 0; }
+.option-content { display: flex; flex-direction: column; gap: 2px; }
+.option-label { font-size: 0.9rem; font-weight: 600; }
+.option-desc { font-size: 0.78rem; color: var(--muted); }
 
-  .msg-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-  .message.assistant .msg-avatar { background: var(--ink); color: white; }
-  .message.user .msg-avatar { background: var(--accent); color: white; }
+/* Setup footer */
+.setup-footer {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--white); border-top: 1.5px solid var(--border);
+  padding: 16px 32px; display: flex; justify-content: space-between; align-items: center;
+  z-index: 100;
+}
+.setup-footer-left { display: flex; gap: 10px; }
+.setup-footer-right { display: flex; gap: 10px; }
 
-  .msg-bubble {
-    max-width: 75%;
-    padding: 12px 16px;
-    border-radius: 14px;
-    font-size: 0.88rem;
-    line-height: 1.6;
-  }
-  .message.assistant .msg-bubble {
-    background: var(--white);
-    border: 1.5px solid var(--border);
-    border-top-left-radius: 4px;
-  }
-  .message.user .msg-bubble {
-    background: var(--ink);
-    color: white;
-    border-top-right-radius: 4px;
-  }
+/* Publish modal */
+.modal-overlay {
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5); z-index: 200;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--white); border-radius: 14px; padding: 32px;
+  width: 90%; max-width: 520px; animation: fadeUp 0.2s ease;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.modal h3 { font-family: 'DM Serif Display', serif; font-size: 1.3rem; margin-bottom: 8px; }
+.modal p { font-size: 0.88rem; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+.participant-link-box {
+  background: var(--chat-bg); border: 1.5px solid var(--border);
+  border-radius: 8px; padding: 12px 16px;
+  font-size: 0.82rem; color: var(--ink); word-break: break-all;
+  margin-bottom: 16px; font-family: monospace;
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
-  .typing-indicator {
-    display: flex;
-    gap: 4px;
-    padding: 14px 16px;
-    align-items: center;
-  }
-  .typing-indicator span {
-    width: 7px; height: 7px;
-    background: var(--muted);
-    border-radius: 50%;
-    animation: bounce 1.2s infinite;
-  }
-  .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-  .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes bounce {
-    0%, 60%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-6px); }
-  }
+/* Bulk modal */
+.bulk-modal-overlay {
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5); z-index: 300;
+  align-items: center; justify-content: center;
+}
+.bulk-modal-overlay.open { display: flex; }
 
-  .chat-input-area {
-    background: var(--white);
-    border: 1.5px solid var(--border);
-    border-top: none;
-    border-radius: 0 0 12px 12px;
-    padding: 14px;
-    display: flex;
-    gap: 10px;
-    align-items: flex-end;
-  }
-  .chat-input {
-    flex: 1;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.88rem;
-    padding: 10px 14px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    background: var(--chat-bg);
-    resize: none;
-    min-height: 42px;
-    max-height: 120px;
-    transition: border-color 0.2s;
-  }
-  .chat-input:focus { outline: none; border-color: var(--accent); }
-  .chat-input:disabled { opacity: 0.5; }
-
-  .send-btn {
-    width: 42px; height: 42px;
-    background: var(--accent);
-    border: none;
-    border-radius: 8px;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    flex-shrink: 0;
-  }
-  .send-btn:hover { background: #a8501f; }
-  .send-btn:disabled { background: var(--border); cursor: not-allowed; }
-
-  /* Completion screen */
-  .completion-screen {
-    text-align: center;
-    padding: 40px;
-    background: var(--white);
-    border: 1.5px solid var(--border);
-    border-radius: 14px;
-    animation: fadeUp 0.5s ease;
-  }
-  .completion-icon {
-    width: 64px; height: 64px;
-    background: var(--success);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-    font-size: 1.6rem;
-  }
-  .completion-screen h2 {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.6rem;
-    margin-bottom: 8px;
-  }
-  .completion-screen p {
-    color: var(--muted);
-    font-size: 0.9rem;
-    line-height: 1.6;
-  }
-
-  /* No study configured */
-  .no-study {
-    text-align: center;
-    padding: 60px 24px;
-    color: var(--muted);
-  }
-  .no-study h3 {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.4rem;
-    color: var(--ink);
-    margin-bottom: 8px;
-  }
-
-  /* Utility */
-  .hidden { display: none !important; }
-  .error-msg {
-    background: #fdf0f0;
-    border: 1.5px solid #f5c0c0;
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 0.82rem;
-    color: #c0392b;
-    margin-top: 8px;
-  }
-
-  /* Navigation dots */
-  .nav-area {
-    max-width: 760px;
-    margin: 20px auto 0;
-    padding: 0 24px;
-    display: flex;
-    justify-content: center;
-  }
+/* Toast */
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: white; padding: 10px 20px;
+  border-radius: 8px; font-size: 0.85rem; font-weight: 500;
+  opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 500;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; }
 </style>
 </head>
 <body>
 
 <div class="app-header">
-  <h1>UX Research Interviewer</h1>
-  <span class="mode-badge" id="modeBadge">Researcher Setup</span>
-</div>
-
-<div class="nav-area">
-  <div class="view-toggle">
-    <button class="toggle-btn active" id="btnSetup" onclick="switchView('setup')">⚙ Researcher Setup</button>
-    <button class="toggle-btn" id="btnInterview" onclick="switchView('interview')">💬 Participant Interview</button>
+  <h1>AI Interviewer</h1>
+  <div class="header-actions">
+    <span class="badge">Researcher</span>
   </div>
 </div>
 
 <!-- ══════════════════════════════
-     RESEARCHER SETUP VIEW
+     DASHBOARD VIEW
 ══════════════════════════════ -->
-<div id="setupView" class="setup-view">
-
-  <div class="setup-intro">
-    <h2>Design Your Study</h2>
-    <p>Fill in your research details below. When ready, switch to the Participant Interview tab to test it.</p>
-  </div>
-
-  <div class="api-notice">
-    <strong>🔑 Anthropic API Key Required</strong>
-    This tool connects to Claude via the Anthropic API. Paste your API key below — it stays in your browser and is never stored elsewhere. Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.
-  </div>
-
-  <div class="form-section">
-    <h3>🔑 API Key</h3>
-    <p class="section-hint">Required to power the AI interviewer.</p>
-    <input type="text" id="apiKey" placeholder="sk-ant-..." />
-  </div>
-
-  <div class="form-section">
-    <h3>🧠 Claude Context</h3>
-    <p class="section-hint">This is only seen by the AI interviewer — not participants. The more detail you provide, the smarter Claude will probe.</p>
-
-    <label>Research Objectives <span style="color:var(--accent);">*</span></label>
-    <textarea id="researchObjectives" rows="3" placeholder="e.g. Understand the specific pain points SME owners face when managing payroll — particularly around time, errors, compliance anxiety, and tool frustration."></textarea>
-
-    <label>Hypotheses <span style="color:var(--muted);font-size:0.75rem;font-weight:400;text-transform:none;">(optional)</span></label>
-    <textarea id="researchHypotheses" rows="3" placeholder="e.g. We hypothesise that manual data entry is the biggest source of payroll errors for SMEs with fewer than 20 employees."></textarea>
-
-    <label>Known Participant Context <span style="color:var(--muted);font-size:0.75rem;font-weight:400;text-transform:none;">(optional)</span></label>
-    <textarea id="participantContext" rows="2" placeholder="e.g. All participants are SME owners or managers responsible for payroll, with between 5 and 50 employees."></textarea>
-
-    <label>Topics to Probe Deeply <span style="color:var(--muted);font-size:0.75rem;font-weight:400;text-transform:none;">(optional)</span></label>
-    <textarea id="probeTopics" rows="2" placeholder="e.g. Moments of stress or anxiety around payroll deadlines. Workarounds participants have invented. Any mention of compliance or ATO."></textarea>
-
-    <label>Sensitive Areas <span style="color:var(--muted);font-size:0.75rem;font-weight:400;text-transform:none;">(optional)</span></label>
-    <textarea id="sensitiveAreas" rows="2" placeholder="e.g. Avoid probing on specific financial figures or personal tax situations. Handle any mention of business failure with care."></textarea>
-
-    <label>What Good Data Looks Like <span style="color:var(--muted);font-size:0.75rem;font-weight:400;text-transform:none;">(optional)</span></label>
-    <textarea id="goodData" rows="2" placeholder="e.g. Specific stories and real examples from their own experience — not general opinions. Emotional language about pain points is particularly valuable."></textarea>
-
-    <label>What to Watch For <span style="color:var(--muted);font-size:0.75rem;font-weight:400;text-transform:none;">(optional)</span></label>
-    <textarea id="watchFor" rows="2" placeholder="e.g. Any mention of switching tools, hiring an accountant, or nearly missing a payroll run — these signal high pain and should be explored further."></textarea>
-  </div>
-
-  <div class="form-section">
-    <h3>📋 Study Details (What participants see)</h3>
-    <p class="section-hint">This appears on the participant's welcome screen.</p>
-    <label>Study Title</label>
-    <input type="text" id="studyTitle" placeholder="e.g. Understanding How People Manage Daily Tasks" />
-    <label>Research Purpose (shown to participants)</label>
-    <textarea id="studyPurpose" rows="3" placeholder="e.g. We're exploring how people currently plan and track their tasks at work, to help us improve our product. Your responses will be anonymised."></textarea>
-    <label>Estimated Duration</label>
-    <input type="text" id="studyDuration" placeholder="e.g. 10–15 minutes" />
-    <label>Researcher / Organisation Name</label>
-    <input type="text" id="researcherName" placeholder="e.g. Sarah — UX Research Team at Acme Co." />
-  </div>
-
-  <div class="form-section">
-    <h3>✅ Consent Statement</h3>
-    <p class="section-hint">Write the full consent details as a paragraph. Participants will read this and choose whether they agree or not before starting.</p>
-    <label>Consent Text</label>
-    <textarea id="consentText" rows="7" placeholder="e.g. By participating in this interview, you agree that your responses may be recorded and used for research purposes. Your data will be anonymised and will not be shared with third parties. Participation is entirely voluntary and you may withdraw at any time without consequence. The interview will take approximately 10–15 minutes.">By participating in this interview, you agree that your responses may be recorded and used for research purposes. Your data will be anonymised and will not be shared with third parties. Participation is entirely voluntary and you may withdraw at any time without consequence. The interview will take approximately 10–15 minutes.</textarea>
-  </div>
-
-  <div class="form-section">
-    <h3>❓ Interview Questions</h3>
-    <p class="section-hint">The AI interviewer will ask these in order, and probe deeper based on each response.</p>
-    <div class="questions-list" id="questionsList">
-      <div class="question-row">
-        <div class="q-number">1</div>
-        <textarea placeholder="e.g. Can you walk me through the last time you had to plan a complex task or project?" rows="2"></textarea>
-        <button class="remove-btn" onclick="removeQuestion(this)">✕</button>
+<div id="dashboardView" class="view active">
+  <div class="dashboard">
+    <div class="dashboard-header">
+      <div>
+        <h2>My Studies</h2>
+        <p>Create, manage and publish your research interviews</p>
       </div>
-      <div class="question-row">
-        <div class="q-number">2</div>
-        <textarea placeholder="e.g. What tools or methods do you currently use to stay organised?" rows="2"></textarea>
-        <button class="remove-btn" onclick="removeQuestion(this)">✕</button>
-      </div>
-      <div class="question-row">
-        <div class="q-number">3</div>
-        <textarea placeholder="e.g. What's the most frustrating part of how you currently manage tasks?" rows="2"></textarea>
-        <button class="remove-btn" onclick="removeQuestion(this)">✕</button>
-      </div>
+      <button class="btn btn-primary" onclick="showSetup()">+ New Study</button>
     </div>
-    <div style="display:flex; gap:10px; margin-top:10px;">
-      <button class="add-question-btn" onclick="addQuestion()" style="flex:1;">+ Add question</button>
-      <button class="add-question-btn" onclick="openBulkModal()" style="flex:1;">⇩ Bulk input</button>
+
+    <div id="studiesContainer">
+      <div class="loading-state">Loading studies…</div>
     </div>
   </div>
+</div>
 
-  <div class="form-section">
-    <h3>🎙 Interviewer Persona</h3>
-    <p class="section-hint">How should the AI present itself to participants?</p>
-    <label>Interviewer Name</label>
-    <input type="text" id="interviewerName" placeholder="e.g. Alex" value="Alex" />
-    <label>Tone & Style</label>
-    <textarea id="interviewerTone" rows="20" style="min-height: 400px; resize: vertical;" placeholder="e.g. Warm, curious, and conversational. Avoid jargon. Never lead the participant toward an answer.">You are a skilled qualitative UX researcher conducting a one-on-one interview. 
-Your manner is warm, genuinely curious, and unhurried — like a thoughtful 
+<!-- ══════════════════════════════
+     SETUP VIEW
+══════════════════════════════ -->
+<div id="setupView" class="view">
+  <div class="setup">
+
+    <div class="setup-header">
+      <button class="btn btn-ghost" onclick="showDashboard()">← Back</button>
+      <h2 id="setupTitle">New Study</h2>
+    </div>
+
+    <input type="hidden" id="currentStudyId" value="" />
+
+    <div class="api-notice">
+      <strong>🔑 Anthropic API Key Required</strong>
+      This powers the AI interviewer. Your key is stored in this browser only — never shared. Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.
+    </div>
+
+    <div class="form-section">
+      <h3>🔑 API Key</h3>
+      <p class="section-hint">Required to power the AI interviewer during participant sessions.</p>
+      <input type="text" id="apiKey" placeholder="sk-ant-..." />
+    </div>
+
+    <div class="form-section">
+      <h3>🧠 Claude Context</h3>
+      <p class="section-hint">Only seen by the AI interviewer — never shown to participants. The more detail you provide, the smarter Claude will probe.</p>
+
+      <label class="field-label">Research Objectives <span class="required-star">*</span></label>
+      <textarea id="researchObjectives" rows="3" placeholder="e.g. Understand the specific pain points SME owners face when managing payroll — particularly around time, errors, compliance anxiety, and tool frustration."></textarea>
+
+      <label class="field-label">Hypotheses <span class="optional">(optional)</span></label>
+      <textarea id="researchHypotheses" rows="2" placeholder="e.g. We hypothesise that manual data entry is the biggest source of payroll errors for SMEs with fewer than 20 employees."></textarea>
+
+      <label class="field-label">Known Participant Context <span class="optional">(optional)</span></label>
+      <textarea id="participantContext" rows="2" placeholder="e.g. All participants are SME owners or managers responsible for payroll, with between 5 and 50 employees."></textarea>
+
+      <label class="field-label">Topics to Probe Deeply <span class="optional">(optional)</span></label>
+      <textarea id="probeTopics" rows="2" placeholder="e.g. Moments of stress around payroll deadlines. Workarounds participants have invented. Any mention of compliance or ATO."></textarea>
+
+      <label class="field-label">Sensitive Areas <span class="optional">(optional)</span></label>
+      <textarea id="sensitiveAreas" rows="2" placeholder="e.g. Avoid probing on specific financial figures or personal tax situations."></textarea>
+
+      <label class="field-label">What Good Data Looks Like <span class="optional">(optional)</span></label>
+      <textarea id="goodData" rows="2" placeholder="e.g. Specific stories and real examples — not general opinions. Emotional language about pain points is particularly valuable."></textarea>
+
+      <label class="field-label">What to Watch For <span class="optional">(optional)</span></label>
+      <textarea id="watchFor" rows="2" placeholder="e.g. Any mention of switching tools or nearly missing a payroll run — these signal high pain and should be explored further."></textarea>
+    </div>
+
+    <div class="form-section">
+      <h3>📋 Study Details <span style="font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:400;color:var(--muted);">(What participants see)</span></h3>
+      <p class="section-hint">Shown on the participant's consent screen.</p>
+
+      <label class="field-label">Study Title <span class="required-star">*</span></label>
+      <input type="text" id="studyTitle" placeholder="e.g. How SMEs Manage Payroll" />
+
+      <label class="field-label">Research Purpose</label>
+      <textarea id="studyPurpose" rows="3" placeholder="e.g. We are exploring how small business owners handle payroll to help improve our product. Your responses will be anonymised."></textarea>
+
+      <label class="field-label">Estimated Duration</label>
+      <input type="text" id="studyDuration" placeholder="e.g. 30 minutes" />
+
+      <label class="field-label">Researcher / Organisation Name</label>
+      <input type="text" id="researcherName" placeholder="e.g. Sarah — UX Research Team at Acme Co." />
+    </div>
+
+    <div class="form-section">
+      <h3>✅ Consent Statement</h3>
+      <p class="section-hint">Write the full consent as a paragraph. Participants will read this and choose whether they agree before starting.</p>
+      <textarea id="consentText" rows="6" placeholder="e.g. By participating in this interview, you agree that your responses may be recorded and used for research purposes. Your data will be anonymised and will not be shared with third parties. Participation is entirely voluntary and you may withdraw at any time.">By participating in this interview, you agree that your responses may be recorded and used for research purposes. Your data will be anonymised and will not be shared with third parties. Participation is entirely voluntary and you may withdraw at any time without consequence.</textarea>
+    </div>
+
+    <div class="form-section">
+      <h3>❓ Interview Questions</h3>
+      <p class="section-hint">The AI interviewer will ask these in order and probe based on your research objectives.</p>
+      <div class="questions-list" id="questionsList">
+        <div class="question-row">
+          <div class="q-number">1</div>
+          <textarea placeholder="e.g. Can you walk me through how you currently process payroll, from start to finish?" rows="2"></textarea>
+          <button class="remove-btn" onclick="removeQuestion(this)">✕</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <button class="add-question-btn" onclick="addQuestion()" style="flex:1;">+ Add question</button>
+        <button class="add-question-btn" onclick="openBulkModal()" style="flex:1;">⇩ Bulk input</button>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>🎙 Interviewer Persona</h3>
+      <p class="section-hint">How the AI presents itself to participants.</p>
+
+      <label class="field-label">Interviewer Name</label>
+      <input type="text" id="interviewerName" value="Alex" placeholder="e.g. Alex" />
+
+      <label class="field-label">Tone & Style</label>
+      <textarea id="interviewerTone" rows="20" style="min-height:400px; resize:vertical;" placeholder="Describe how the interviewer should behave…">You are a skilled qualitative UX researcher conducting a one-on-one interview.
+Your manner is warm, genuinely curious, and unhurried — like a thoughtful
 conversation, not a survey.
 
 NEUTRALITY & BIAS PREVENTION
-- Never lead, suggest, or imply a preferred answer. Ask open questions only 
+- Never lead, suggest, or imply a preferred answer. Ask open questions only
   (e.g. "How did that feel?" not "Did that feel frustrating?").
-- Avoid words that signal expectation: "obviously", "of course", "as expected", 
+- Avoid words that signal expectation: "obviously", "of course", "as expected",
   "most people", "surely".
-- Do not react to answers with evaluative language like "great", "interesting" 
-  or "that makes sense" — these signal approval and skew subsequent answers. 
+- Do not react to answers with evaluative language like "great", "interesting"
+  or "that makes sense" — these signal approval and skew subsequent answers.
   Instead, use neutral acknowledgements: "I see.", "Got it.", "Thank you."
-- If a participant seems to be telling you what they think you want to hear, 
-  gently redirect: "There are no right or wrong answers here — I am genuinely 
+- If a participant seems to be telling you what they think you want to hear,
+  gently redirect: "There are no right or wrong answers here — I am genuinely
   curious about your own experience."
 
 PROBING FOR DEPTH
-- If an answer is vague, too short, or uses abstract language, probe once 
+- If an answer is vague, too short, or uses abstract language, probe once
   before moving on. Good probes:
     · "Could you walk me through a specific example of that?"
     · "What did that look like in practice?"
     · "When you say [their word], what do you mean by that?"
     · "Can you tell me a bit more about that?"
-- If a participant gives a one-word or yes/no answer, always follow up with 
+- If a participant gives a one-word or yes/no answer, always follow up with
   "Can you say more about that?" before moving to the next question.
-- Never accept "I don not know" as a final answer without one gentle 
+- Never accept "I do not know" as a final answer without one gentle
   follow-up: "Take your time — even a rough sense of it would be helpful."
 
 SENSING HESITATION
-- If a participant trails off, uses filler words (e.g. "I mean… it's kind of…"), 
-  or gives a very short answer after a pause, treat this as a signal of 
+- If a participant trails off, uses filler words (e.g. "I mean… it's kind of…"),
+  or gives a very short answer after a pause, treat this as a signal of
   hesitation. Respond with silence-equivalent language:
     · "Take your time."
     · "There's no rush — whatever comes to mind."
     · "Even if it's just a feeling, I'd love to hear it."
-- Do not rush to the next question. Hesitation often precedes the most 
+- Do not rush to the next question. Hesitation often precedes the most
   valuable insight.
 
 ACTIVE LISTENING
-- Reflect back occasionally to show you've understood, without paraphrasing 
+- Reflect back occasionally to show you've understood, without paraphrasing
   so closely that you put words in their mouth:
     · "So if I understand correctly, the issue was more about [X] than [Y]?"
-- After a reflection, always invite correction: "Does that capture it, or 
+- After a reflection, always invite correction: "Does that capture it, or
   would you describe it differently?"
 
 PACING & FLOW
 - Ask one question at a time. Never stack two questions in one message.
 - Keep your messages short. This is a conversation, not an essay.
-- Transition between questions naturally: "Thank you for that. I'd like to 
+- Transition between questions naturally: "Thank you for that. I'd like to
   shift gears slightly and ask about…"</textarea>
+    </div>
+
   </div>
 
-  <button class="generate-btn" onclick="saveStudy()">Save Study & Preview as Participant →</button>
-
+  <div class="setup-footer">
+    <div class="setup-footer-left">
+      <button class="btn btn-secondary" onclick="showDashboard()">Cancel</button>
+    </div>
+    <div class="setup-footer-right">
+      <button class="btn btn-secondary" onclick="saveStudy('draft')">Save as Draft</button>
+      <button class="btn btn-success" onclick="saveStudy('live')">Publish Study →</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════
-     PARTICIPANT INTERVIEW VIEW
+     PUBLISH SUCCESS MODAL
 ══════════════════════════════ -->
-<div id="interviewView" class="interview-view hidden">
-
-  <!-- No study configured -->
-  <div id="noStudy" class="no-study hidden">
-    <h3>No study configured yet</h3>
-    <p>Switch to Researcher Setup, fill in your study details, and click Save Study.</p>
-  </div>
-
-  <!-- Consent screen -->
-  <div id="consentScreen" class="consent-screen hidden">
-    <p class="consent-org" id="pResearcher"></p>
-    <div class="study-title" id="pTitle"></div>
-    <div class="study-purpose" id="pPurpose"></div>
-    <p class="consent-duration" id="pDuration"></p>
-
-    <div class="consent-block">
-      <h4 class="consent-heading">Participant Consent</h4>
-      <p class="consent-paragraph" id="pConsentText"></p>
-    </div>
-
-    <p class="consent-question">Do you agree to the above?</p>
-
-    <div class="consent-options">
-      <label class="consent-option" id="optAgree">
-        <input type="radio" name="consentChoice" value="agree" onchange="checkConsent()" />
-        <div class="option-content">
-          <span class="option-label">I agree with all of the above</span>
-          <span class="option-desc">I am happy to proceed with the interview</span>
-        </div>
-      </label>
-      <label class="consent-option" id="optDecline">
-        <input type="radio" name="consentChoice" value="decline" onchange="checkConsent()" />
-        <div class="option-content">
-          <span class="option-label">I do not consent</span>
-          <span class="option-desc">I prefer not to participate at this time</span>
-        </div>
-      </label>
-    </div>
-
-    <div id="declinedMsg" class="declined-msg hidden">
-      Thank you for your time. You have chosen not to participate. You may close this window.
-    </div>
-
-    <button class="start-btn" id="startBtn" onclick="startInterview()" disabled>Begin Interview</button>
-  </div>
-
-  <!-- Chat -->
-  <div id="chatUI" class="chat-container hidden">
-    <div class="chat-header">
-      <div class="interviewer-avatar" id="avatarInitial">A</div>
-      <div class="interviewer-info">
-        <h4 id="chatName">Alex</h4>
-        <p>UX Research Interviewer · Active now</p>
-      </div>
-    </div>
-    <div class="chat-messages" id="chatMessages"></div>
-    <div class="chat-input-area">
-      <textarea class="chat-input" id="chatInput" placeholder="Type your response…" rows="1"
-        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-      <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="22" y1="2" x2="11" y2="13"></line>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-        </svg>
-      </button>
+<div class="modal-overlay" id="publishModal">
+  <div class="modal">
+    <h3>🎉 Study Published!</h3>
+    <p>Your study is now live. Share this link with participants — they'll be taken straight to the consent screen and interview.</p>
+    <div class="participant-link-box" id="publishedLink"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closePublishModal()">Done</button>
+      <button class="btn btn-primary" onclick="copyParticipantLink()">Copy Link</button>
     </div>
   </div>
-
-  <!-- Completion -->
-  <div id="completionScreen" class="completion-screen hidden">
-    <div class="completion-icon">✓</div>
-    <h2>Thank you!</h2>
-    <p>Your responses have been recorded. This interview is now complete.<br>You may close this window.</p>
-  </div>
-
 </div>
 
+<!-- ══════════════════════════════
+     BULK INPUT MODAL
+══════════════════════════════ -->
+<div class="bulk-modal-overlay" id="bulkModal">
+  <div class="modal">
+    <h3>Bulk input questions</h3>
+    <p>Paste your questions below — one per line, in any format (numbered, bulleted, or plain lines).</p>
+    <textarea id="bulkPasteInput" rows="10" style="width:100%; margin-bottom:16px;" placeholder="e.g.
+1. Can you walk me through your payroll process?
+2. What tools do you currently use?
+3. What is the most frustrating part?"></textarea>
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button class="btn btn-secondary" onclick="closeBulkModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="splitQuestions()">Add questions</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-  // ── State ──
-  let study = null;
-  let conversationHistory = [];
-  let isWaiting = false;
-  let questionIndex = 0;
-  let interviewComplete = false;
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsEZ1j71vjEf42pP-mRLgvO-iCJtGtxv6jWqIJKcqv0ldwi2fvZst4xKt1ud-9bGNz/exec';
+const PARTICIPANT_BASE = 'https://gene-ai-interviewer.netlify.app/interview.html';
 
-  // ── View switching ──
-  function switchView(view) {
-    const isSetup = view === 'setup';
-    document.getElementById('setupView').classList.toggle('hidden', !isSetup);
-    document.getElementById('interviewView').classList.toggle('hidden', isSetup);
-    document.getElementById('btnSetup').classList.toggle('active', isSetup);
-    document.getElementById('btnInterview').classList.toggle('active', !isSetup);
-    document.getElementById('modeBadge').textContent = isSetup ? 'Researcher Setup' : 'Participant View';
+// ── Toast ──
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
 
-    if (!isSetup) renderParticipantView();
-  }
+// ── View switching ──
+function showDashboard() {
+  document.getElementById('dashboardView').classList.add('active');
+  document.getElementById('setupView').classList.remove('active');
+  loadStudies();
+}
 
-  // ── Researcher: add/remove questions ──
-  function openBulkModal() {
-    const modal = document.getElementById('bulkModal');
-    modal.style.display = 'flex';
-    document.getElementById('bulkPasteInput').focus();
-  }
+function showSetup(study = null) {
+  document.getElementById('dashboardView').classList.remove('active');
+  document.getElementById('setupView').classList.add('active');
 
-  function closeBulkModal() {
-    document.getElementById('bulkModal').style.display = 'none';
-    document.getElementById('bulkPasteInput').value = '';
-  }
+  if (study) {
+    document.getElementById('setupTitle').textContent = 'Edit Study';
+    document.getElementById('currentStudyId').value = study.study_id;
+    document.getElementById('apiKey').value = study.api_key || '';
+    document.getElementById('researchObjectives').value = study.research_objectives || '';
+    document.getElementById('researchHypotheses').value = study.hypotheses || '';
+    document.getElementById('participantContext').value = study.participant_context || '';
+    document.getElementById('probeTopics').value = study.probe_topics || '';
+    document.getElementById('sensitiveAreas').value = study.sensitive_areas || '';
+    document.getElementById('goodData').value = study.good_data || '';
+    document.getElementById('watchFor').value = study.watch_for || '';
+    document.getElementById('studyTitle').value = study.title || '';
+    document.getElementById('studyPurpose').value = study.purpose || '';
+    document.getElementById('studyDuration').value = study.duration || '';
+    document.getElementById('researcherName').value = study.researcher || '';
+    document.getElementById('consentText').value = study.consent_text || '';
+    document.getElementById('interviewerName').value = study.interviewer_name || 'Alex';
+    document.getElementById('interviewerTone').value = study.tone || '';
 
-  function splitQuestions() {
-    const raw = document.getElementById('bulkPasteInput').value.trim();
-    if (!raw) return;
-
-    const lines = raw.split(/\n/);
-    const questions = [];
-
-    lines.forEach(line => {
-      const trimmed = line.trim();
-      if (!trimmed) return;
-
-      const stripped = trimmed.replace(/^[\s\d\.\)\(\]\[•\-\*\→\◆\❯\►\▶\–\—\·\※\✓\✔\☐\☑\➤\➢\➣\➔\▸\‣\⁃\∙\○\●\■\□\★\✦\+\>\|]+/, '').trim();
-
-      if (stripped) questions.push(stripped);
-    });
-
-    if (questions.length === 0) {
-      alert('No questions detected. Please make sure each question is on its own line.');
-      return;
-    }
-
+    // Populate questions
     const list = document.getElementById('questionsList');
-
-    // Remove empty placeholder rows first
-    [...list.querySelectorAll('.question-row')].forEach(row => {
-      const textarea = row.querySelector('textarea');
-      if (!textarea.value.trim()) row.remove();
-    });
-
-    // Now append the new questions after any remaining filled ones
-    const existingCount = list.children.length;
+    list.innerHTML = '';
+    const questions = study.questions || [];
     questions.forEach((q, i) => {
       const row = document.createElement('div');
       row.className = 'question-row';
       row.innerHTML = `
-        <div class="q-number">${existingCount + i + 1}</div>
-        <textarea placeholder="Type your question here…" rows="2">${q}</textarea>
+        <div class="q-number">${i + 1}</div>
+        <textarea rows="2">${q}</textarea>
         <button class="remove-btn" onclick="removeQuestion(this)">✕</button>`;
       list.appendChild(row);
     });
-
-    renumberQuestions();
-    closeBulkModal();
+    if (questions.length === 0) addQuestion();
+  } else {
+    document.getElementById('setupTitle').textContent = 'New Study';
+    document.getElementById('currentStudyId').value = '';
+    // Reset form
+    ['apiKey','researchObjectives','researchHypotheses','participantContext',
+     'probeTopics','sensitiveAreas','goodData','watchFor','studyTitle',
+     'studyPurpose','studyDuration','researcherName'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('consentText').value = 'By participating in this interview, you agree that your responses may be recorded and used for research purposes. Your data will be anonymised and will not be shared with third parties. Participation is entirely voluntary and you may withdraw at any time without consequence.';
+    document.getElementById('interviewerName').value = 'Alex';
+    document.getElementById('questionsList').innerHTML = '';
+    addQuestion();
   }
 
-  function addQuestion() {
-    const list = document.getElementById('questionsList');
-    const n = list.children.length + 1;
+  window.scrollTo(0, 0);
+}
+
+// ── Load studies ──
+async function loadStudies() {
+  const container = document.getElementById('studiesContainer');
+  container.innerHTML = '<div class="loading-state">Loading studies…</div>';
+
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=getStudies`);
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.error);
+
+    if (data.studies.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <h3>No studies yet</h3>
+          <p>Create your first research interview to get started.</p>
+          <button class="btn btn-primary" onclick="showSetup()">+ New Study</button>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'studies-grid';
+
+    data.studies.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'study-card';
+      const date = new Date(s.created_at).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+      card.innerHTML = `
+        <div class="study-card-left">
+          <div class="study-card-title">${s.title || 'Untitled Study'}</div>
+          <div class="study-card-meta">
+            <span class="status-pill status-${s.status}">${s.status}</span>
+            <span>Created ${date}</span>
+          </div>
+        </div>
+        <div class="study-card-actions">
+          ${s.status === 'live' ? `<button class="btn btn-secondary" onclick="copyLink('${s.study_id}')">Copy link</button>` : ''}
+          <button class="btn btn-secondary" onclick="editStudy('${s.study_id}')">Edit</button>
+        </div>`;
+      grid.appendChild(card);
+    });
+
+    container.appendChild(grid);
+  } catch (err) {
+    container.innerHTML = `<div class="empty-state"><h3>Could not load studies</h3><p>${err.message}</p></div>`;
+  }
+}
+
+// ── Edit study ──
+async function editStudy(study_id) {
+  showToast('Loading study…');
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=getStudy&study_id=${study_id}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    showSetup(data.study);
+  } catch (err) {
+    showToast('Could not load study: ' + err.message);
+  }
+}
+
+// ── Save study ──
+async function saveStudy(status) {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const researchObjectives = document.getElementById('researchObjectives').value.trim();
+  const title = document.getElementById('studyTitle').value.trim();
+  const questions = [...document.querySelectorAll('#questionsList textarea')]
+    .map(t => t.value.trim()).filter(Boolean);
+  const consentText = document.getElementById('consentText').value.trim();
+
+  if (!apiKey) { alert('Please enter your Anthropic API key.'); return; }
+  if (!researchObjectives) { alert('Please add your Research Objectives in the Claude Context section.'); return; }
+  if (!title) { alert('Please add a study title.'); return; }
+  if (questions.length === 0) { alert('Please add at least one interview question.'); return; }
+  if (!consentText) { alert('Please add a consent statement.'); return; }
+
+  const study_id = document.getElementById('currentStudyId').value || null;
+
+  const payload = {
+    action: 'saveStudy',
+    study_id: study_id,
+    status: status,
+    api_key: apiKey,
+    title: title,
+    purpose: document.getElementById('studyPurpose').value.trim(),
+    duration: document.getElementById('studyDuration').value.trim(),
+    researcher: document.getElementById('researcherName').value.trim(),
+    interviewer_name: document.getElementById('interviewerName').value.trim() || 'Alex',
+    tone: document.getElementById('interviewerTone').value.trim(),
+    questions: questions,
+    consent_text: consentText,
+    research_objectives: researchObjectives,
+    hypotheses: document.getElementById('researchHypotheses').value.trim(),
+    participant_context: document.getElementById('participantContext').value.trim(),
+    probe_topics: document.getElementById('probeTopics').value.trim(),
+    sensitive_areas: document.getElementById('sensitiveAreas').value.trim(),
+    good_data: document.getElementById('goodData').value.trim(),
+    watch_for: document.getElementById('watchFor').value.trim()
+  };
+
+  showToast('Saving…');
+
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    // Update the study ID if newly created
+    document.getElementById('currentStudyId').value = data.study_id;
+
+    if (status === 'live') {
+      const link = `${PARTICIPANT_BASE}?study=${data.study_id}`;
+      document.getElementById('publishedLink').textContent = link;
+      document.getElementById('publishModal').classList.add('open');
+    } else {
+      showToast('Draft saved!');
+    }
+  } catch (err) {
+    showToast('Error saving: ' + err.message, 5000);
+  }
+}
+
+// ── Publish modal ──
+function closePublishModal() {
+  document.getElementById('publishModal').classList.remove('open');
+  showDashboard();
+}
+
+function copyParticipantLink() {
+  const link = document.getElementById('publishedLink').textContent;
+  navigator.clipboard.writeText(link).then(() => showToast('Link copied!'));
+}
+
+function copyLink(study_id) {
+  const link = `${PARTICIPANT_BASE}?study=${study_id}`;
+  navigator.clipboard.writeText(link).then(() => showToast('Link copied!'));
+}
+
+// ── Questions ──
+function addQuestion() {
+  const list = document.getElementById('questionsList');
+  const n = list.children.length + 1;
+  const row = document.createElement('div');
+  row.className = 'question-row';
+  row.innerHTML = `
+    <div class="q-number">${n}</div>
+    <textarea placeholder="Type your question here…" rows="2"></textarea>
+    <button class="remove-btn" onclick="removeQuestion(this)">✕</button>`;
+  list.appendChild(row);
+}
+function removeQuestion(btn) {
+  btn.closest('.question-row').remove();
+  renumberQuestions();
+}
+function renumberQuestions() {
+  document.querySelectorAll('.q-number').forEach((el, i) => el.textContent = i + 1);
+}
+
+// ── Bulk input ──
+function openBulkModal() {
+  document.getElementById('bulkModal').classList.add('open');
+  document.getElementById('bulkPasteInput').focus();
+}
+function closeBulkModal() {
+  document.getElementById('bulkModal').classList.remove('open');
+  document.getElementById('bulkPasteInput').value = '';
+}
+function splitQuestions() {
+  const raw = document.getElementById('bulkPasteInput').value.trim();
+  if (!raw) return;
+  const lines = raw.split(/\n/);
+  const questions = [];
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    const stripped = trimmed.replace(/^[\s\d\.\)\(\]\[•\-\*\→\◆\❯\►\▶\–\—\·\※\✓\✔\☐\☑\➤\➢\➣\➔\▸\‣\⁃\∙\○\●\■\□\★\✦\+\>\|]+/, '').trim();
+    if (stripped) questions.push(stripped);
+  });
+  if (questions.length === 0) {
+    alert('No questions detected. Please make sure each question is on its own line.');
+    return;
+  }
+  const list = document.getElementById('questionsList');
+  [...list.querySelectorAll('.question-row')].forEach(row => {
+    if (!row.querySelector('textarea').value.trim()) row.remove();
+  });
+  const existingCount = list.children.length;
+  questions.forEach((q, i) => {
     const row = document.createElement('div');
     row.className = 'question-row';
     row.innerHTML = `
-      <div class="q-number">${n}</div>
-      <textarea placeholder="Type your question here…" rows="2"></textarea>
+      <div class="q-number">${existingCount + i + 1}</div>
+      <textarea rows="2">${q}</textarea>
       <button class="remove-btn" onclick="removeQuestion(this)">✕</button>`;
     list.appendChild(row);
-    renumberQuestions();
-  }
-  function removeQuestion(btn) {
-    btn.closest('.question-row').remove();
-    renumberQuestions();
-  }
-  function renumberQuestions() {
-    document.querySelectorAll('.q-number').forEach((el, i) => el.textContent = i + 1);
-  }
+  });
+  renumberQuestions();
+  closeBulkModal();
+}
 
-  // ── Save study ──
-  function saveStudy() {
-    const apiKey = document.getElementById('apiKey').value.trim();
-    const title = document.getElementById('studyTitle').value.trim();
-    const purpose = document.getElementById('studyPurpose').value.trim();
-    const duration = document.getElementById('studyDuration').value.trim();
-    const researcher = document.getElementById('researcherName').value.trim();
-    const interviewerName = document.getElementById('interviewerName').value.trim() || 'Alex';
-    const tone = document.getElementById('interviewerTone').value.trim();
-    const researchObjectives = document.getElementById('researchObjectives').value.trim();
-    const researchHypotheses = document.getElementById('researchHypotheses').value.trim();
-    const participantContext = document.getElementById('participantContext').value.trim();
-    const probeTopics = document.getElementById('probeTopics').value.trim();
-    const sensitiveAreas = document.getElementById('sensitiveAreas').value.trim();
-    const goodData = document.getElementById('goodData').value.trim();
-    const watchFor = document.getElementById('watchFor').value.trim();
-
-    const questions = [...document.querySelectorAll('#questionsList textarea')]
-      .map(t => t.value.trim()).filter(Boolean);
-    const consentText = document.getElementById('consentText').value.trim();
-
-    if (!apiKey) { alert('Please enter your Anthropic API key.'); return; }
-    if (!researchObjectives) { alert('Please add your Research Objectives in the Claude Context section.'); return; }
-    if (!title) { alert('Please add a study title.'); return; }
-    if (questions.length === 0) { alert('Please add at least one interview question.'); return; }
-    if (!consentText) { alert('Please add a consent statement.'); return; }
-
-    study = { apiKey, title, purpose, duration, researcher, interviewerName, tone, questions, consentText, researchObjectives, researchHypotheses, participantContext, probeTopics, sensitiveAreas, goodData, watchFor };
-
-    // Reset interview state
-    conversationHistory = [];
-    questionIndex = 0;
-    interviewComplete = false;
-
-    switchView('interview');
-  }
-
-  // ── Render participant view ──
-  function renderParticipantView() {
-    document.getElementById('noStudy').classList.add('hidden');
-    document.getElementById('consentScreen').classList.add('hidden');
-    document.getElementById('chatUI').classList.add('hidden');
-    document.getElementById('completionScreen').classList.add('hidden');
-
-    if (!study) {
-      document.getElementById('noStudy').classList.remove('hidden');
-      return;
-    }
-
-    // Reset
-    conversationHistory = [];
-    questionIndex = 0;
-    interviewComplete = false;
-    document.getElementById('chatMessages').innerHTML = '';
-
-    document.getElementById('pResearcher').textContent = study.researcher || '';
-    document.getElementById('pTitle').textContent = study.title;
-    document.getElementById('pPurpose').textContent = study.purpose;
-    document.getElementById('pDuration').textContent = study.duration ? `Estimated time: ${study.duration}` : '';
-    document.getElementById('pConsentText').textContent = study.consentText;
-
-    // Reset radio buttons
-    document.querySelectorAll('input[name="consentChoice"]').forEach(r => r.checked = false);
-    document.getElementById('declinedMsg').classList.add('hidden');
-    document.getElementById('startBtn').disabled = true;
-    document.getElementById('startBtn').classList.remove('hidden');
-
-    document.getElementById('consentScreen').classList.remove('hidden');
-    checkConsent();
-  }
-
-  function checkConsent() {
-    const choice = document.querySelector('input[name="consentChoice"]:checked')?.value;
-    const startBtn = document.getElementById('startBtn');
-    const declinedMsg = document.getElementById('declinedMsg');
-
-    if (choice === 'agree') {
-      startBtn.disabled = false;
-      startBtn.classList.remove('hidden');
-      declinedMsg.classList.add('hidden');
-    } else if (choice === 'decline') {
-      startBtn.disabled = true;
-      startBtn.classList.add('hidden');
-      declinedMsg.classList.remove('hidden');
-    } else {
-      startBtn.disabled = true;
-      startBtn.classList.remove('hidden');
-      declinedMsg.classList.add('hidden');
-    }
-  }
-
-  // ── Start interview ──
-  async function startInterview() {
-    document.getElementById('consentScreen').classList.add('hidden');
-    document.getElementById('chatUI').classList.remove('hidden');
-    document.getElementById('avatarInitial').textContent = study.interviewerName.charAt(0).toUpperCase();
-    document.getElementById('chatName').textContent = study.interviewerName;
-    document.getElementById('chatInput').disabled = true;
-    document.getElementById('sendBtn').disabled = true;
-
-    showTyping();
-    const opening = await askClaude(buildSystemPrompt(), null, true);
-    hideTyping();
-    appendMessage('assistant', opening);
-    document.getElementById('chatInput').disabled = false;
-    document.getElementById('sendBtn').disabled = false;
-    document.getElementById('chatInput').focus();
-  }
-
-  // ── Build system prompt ──
-  function buildSystemPrompt() {
-    const qs = study.questions.map((q, i) => `${i + 1}. ${q}`).join('\n');
-
-    const optionalContext = [
-      study.researchHypotheses ? `HYPOTHESES:\n${study.researchHypotheses}` : '',
-      study.participantContext ? `KNOWN PARTICIPANT CONTEXT:\n${study.participantContext}` : '',
-      study.probeTopics ? `TOPICS TO PROBE DEEPLY:\n${study.probeTopics}` : '',
-      study.sensitiveAreas ? `SENSITIVE AREAS — HANDLE WITH CARE:\n${study.sensitiveAreas}` : '',
-      study.goodData ? `WHAT GOOD DATA LOOKS LIKE:\n${study.goodData}` : '',
-      study.watchFor ? `WHAT TO WATCH FOR:\n${study.watchFor}` : '',
-    ].filter(Boolean).join('\n\n');
-
-    return `You are ${study.interviewerName}, a skilled UX research interviewer. Your tone: ${study.tone || 'warm, curious, and professional'}.
-
-You are conducting a research interview about: "${study.title}".
-
-RESEARCH OBJECTIVES (use these to guide all probing decisions):
-${study.researchObjectives}
-
-${optionalContext ? optionalContext + '\n' : ''}
-Your interview questions (ask in order):
-${qs}
-
-INSTRUCTIONS:
-- Start with a warm, brief welcome (2-3 sentences). Mention that the interview will take approximately ${study.duration || '10–15 minutes'}. Then ask Question 1 naturally.
-- Ask ONE question at a time. Wait for a full response.
-- After each answer, assess it against the research objectives. If the answer reveals something directly relevant to the objectives that warrants deeper exploration, probe it before moving on. Otherwise move to the next question.
-- If an answer is vague, too short, or uses abstract language, probe once before moving on.
-- Never ask more than one follow-up probe per question.
-- Never lead or suggest answers. Stay neutral and curious.
-- If a sensitive area is mentioned, handle it with care and do not probe further into it.
-- After all ${study.questions.length} questions are answered, offer a warm closing. Thank the participant sincerely, and end with the exact phrase: "This interview is now complete. Type EXIT when you are ready to close."
-- Keep your messages conversational and concise — this is a chat, not an essay.
-- Do NOT number your questions out loud. Ask them naturally.
-- Track internally which question you are on. Once all are covered and probed, conclude.`;
-  }
-
-  // ── Send message ──
-  async function sendMessage() {
-    const input = document.getElementById('chatInput');
-    const text = input.value.trim();
-    if (!text || isWaiting) return;
-
-    // Check if participant is typing EXIT to end
-    if (text.toUpperCase() === 'EXIT' && interviewComplete) {
-      showCompletion();
-      return;
-    }
-    appendMessage('user', text);
-    input.value = '';
-    input.style.height = 'auto';
-    input.disabled = true;
-    document.getElementById('sendBtn').disabled = true;
-    isWaiting = true;
-
-    conversationHistory.push({ role: 'user', content: text });
-
-    showTyping();
-    const reply = await askClaude(buildSystemPrompt(), conversationHistory);
-    hideTyping();
-
-    conversationHistory.push({ role: 'assistant', content: reply });
-    appendMessage('assistant', reply);
-  
-  // Check for completion signal — only trigger after at least 4 exchanges
-    const lower = reply.toLowerCase();
-    const enoughExchanges = conversationHistory.length >= 4;
-    const closingSignal = (
-      lower.includes('interview is now complete') ||
-      lower.includes('that concludes our interview') ||
-      lower.includes('we have covered all') ||
-      lower.includes('those are all my questions') ||
-      (lower.includes('thank you') && lower.includes('time') && lower.includes('close'))
-    );
-    if (enoughExchanges && closingSignal) {
-      interviewComplete = true;
-      document.getElementById('chatInput').placeholder = 'Type EXIT to close the interview…';
-    }
-
-    isWaiting = false;
-    input.disabled = false;
-    document.getElementById('sendBtn').disabled = false;
-    input.focus();
-  }
-  
-  // ── Claude API call ──
-  async function askClaude(systemPrompt, history, isOpening = false) {
-    try {
-      const messages = isOpening
-        ? [{ role: 'user', content: 'Please begin the interview.' }]
-        : history;
-
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': study.apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 500,
-          system: systemPrompt,
-          messages: messages
-        })
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        return `[Error: ${err.error?.message || 'API request failed. Check your API key.'}]`;
-      }
-
-      const data = await response.json();
-      return data.content?.[0]?.text || '[No response]';
-    } catch (e) {
-      return `[Error: ${e.message}]`;
-    }
-  }
-
-  // ── UI helpers ──
-  function appendMessage(role, text) {
-    const messages = document.getElementById('chatMessages');
-    const div = document.createElement('div');
-    div.className = `message ${role}`;
-    const initial = role === 'assistant'
-      ? (study?.interviewerName?.charAt(0).toUpperCase() || 'A')
-      : 'P';
-    div.innerHTML = `
-      <div class="msg-avatar">${initial}</div>
-      <div class="msg-bubble">${text.replace(/\n/g, '<br>')}</div>`;
-    messages.appendChild(div);
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  let typingEl = null;
-  function showTyping() {
-    const messages = document.getElementById('chatMessages');
-    typingEl = document.createElement('div');
-    typingEl.className = 'message assistant';
-    typingEl.id = 'typingIndicator';
-    const initial = study?.interviewerName?.charAt(0).toUpperCase() || 'A';
-    typingEl.innerHTML = `
-      <div class="msg-avatar">${initial}</div>
-      <div class="msg-bubble">
-        <div class="typing-indicator">
-          <span></span><span></span><span></span>
-        </div>
-      </div>`;
-    messages.appendChild(typingEl);
-    messages.scrollTop = messages.scrollHeight;
-  }
-  function hideTyping() {
-    document.getElementById('typingIndicator')?.remove();
-  }
-
-  function showCompletion() {
-    document.getElementById('chatUI').classList.add('hidden');
-    document.getElementById('completionScreen').classList.remove('hidden');
-  }
-
-  function handleKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  }
-
-  function autoResize(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-  }
+// ── Init ──
+loadStudies();
 </script>
-  
-<div id="bulkModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-  <div style="background:var(--white); border-radius:14px; padding:28px; width:90%; max-width:560px;">
-    <h3 style="font-family:'DM Serif Display',serif; font-size:1.2rem; margin-bottom:6px;">Bulk input questions</h3>
-    <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Paste your questions below — one per line, in any format (numbered, bulleted, or plain lines).</p>
-    <textarea id="bulkPasteInput" rows="10" style="width:100%; font-family:'DM Sans',sans-serif; font-size:0.88rem; padding:10px 14px; border:1.5px solid var(--border); border-radius:8px; background:var(--chat-bg); resize:vertical;" placeholder="e.g. 1. Can you walk me through your payroll process?"></textarea>
-    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
-      <button onclick="closeBulkModal()" style="background:none; border:1.5px solid var(--border); border-radius:8px; padding:9px 20px; font-family:'DM Sans',sans-serif; font-size:0.85rem; color:var(--muted); cursor:pointer;">Cancel</button>
-      <button onclick="splitQuestions()" style="background:var(--ink); color:white; border:none; border-radius:8px; padding:9px 20px; font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:600; cursor:pointer;">Add questions</button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
