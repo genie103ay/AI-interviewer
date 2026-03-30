@@ -418,6 +418,17 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--ac
     <div class="form-section">
       <h3>❓ Interview Questions</h3>
       <p class="section-hint">The AI interviewer will ask these in order and probe based on your research objectives.</p>
+      <div id="suggestionsPanel" style="display:none; background:var(--chat-bg); border:1.5px solid var(--border); border-radius:10px; padding:20px; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+          <p style="font-size:0.85rem; font-weight:600; color:var(--ink);">✨ Suggested questions — tick the ones you want to add</p>
+          <button class="btn btn-ghost" onclick="closeSuggestions()">✕ Close</button>
+        </div>
+        <div id="suggestionsList" style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <button class="btn btn-ghost" onclick="toggleAllSuggestions()">Select / deselect all</button>
+          <button class="btn btn-primary" onclick="addSelectedSuggestions()">Add selected questions</button>
+        </div>
+      </div>
       <div class="questions-list" id="questionsList">
         <div class="question-row">
           <div class="q-number">1</div>
@@ -428,6 +439,7 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--ac
       <div style="display:flex; gap:10px; margin-top:10px;">
         <button class="add-question-btn" onclick="addQuestion()" style="flex:1;">+ Add question</button>
         <button class="add-question-btn" onclick="openBulkModal()" style="flex:1;">⇩ Bulk input</button>
+        <button class="add-question-btn" onclick="suggestQuestions()" style="flex:1;" id="suggestBtn">✨ Suggest questions</button>
       </div>
     </div>
 
@@ -777,6 +789,148 @@ function renumberQuestions() {
 }
 
 // ── Bulk input ──
+async function suggestQuestions() {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const objectives = document.getElementById('researchObjectives').value.trim();
+
+    if (!apiKey) { alert('Please enter your Anthropic API key first.'); return; }
+    if (!objectives) { alert('Please fill in your Research Objectives in the Claude Context section first — Claude needs these to suggest relevant questions.'); return; }
+
+    const btn = document.getElementById('suggestBtn');
+    btn.textContent = '⏳ Generating…';
+    btn.disabled = true;
+
+    const context = [
+      `Research Objectives: ${objectives}`,
+      document.getElementById('researchHypotheses').value.trim() ? `Hypotheses: ${document.getElementById('researchHypotheses').value.trim()}` : '',
+      document.getElementById('participantContext').value.trim() ? `Participant Context: ${document.getElementById('participantContext').value.trim()}` : '',
+      document.getElementById('probeTopics').value.trim() ? `Topics to Probe: ${document.getElementById('probeTopics').value.trim()}` : '',
+      document.getElementById('studyTitle').value.trim() ? `Study Title: ${document.getElementById('studyTitle').value.trim()}` : '',
+    ].filter(Boolean).join('\n\n');
+
+    const tone = document.getElementById('interviewerTone').value.trim();
+    
+        const prompt = `You are an expert UX researcher helping design a research interview.
+    
+    Based on the following research context, suggest exactly 10 interview questions.
+    
+    FIXED QUALITY STANDARDS — these always apply regardless of anything else:
+    - Every question must be open-ended (never yes/no or leading)
+    - Questions must never imply a preferred or expected answer
+    - Questions must cover different angles of the research objectives
+    - Order from broad warm-up questions to more specific probing ones
+    - Never use language that could prime the participant toward a particular response
+    
+    STYLE & REGISTER — apply these to the phrasing and vocabulary only:
+    ${tone || 'Warm, curious, and conversational.'}
+    
+    Research context:
+    ${context}
+    
+    Respond ONLY with a JSON array of exactly 10 strings — no preamble, no explanation, no markdown. Example format:
+    ["Question 1 here", "Question 2 here", "Question 3 here"]`;
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await response.json();
+      const raw = data.content?.[0]?.text || '[]';
+
+      // Strip any accidental markdown backticks
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const questions = JSON.parse(clean);
+
+      if (!Array.isArray(questions) || questions.length === 0) throw new Error('No questions returned');
+
+      renderSuggestions(questions);
+    } catch (err) {
+      alert('Could not generate suggestions: ' + err.message);
+    } finally {
+      btn.textContent = '✨ Suggest questions';
+      btn.disabled = false;
+    }
+  }
+
+  function renderSuggestions(questions) {
+    const list = document.getElementById('suggestionsList');
+    list.innerHTML = '';
+    questions.forEach((q, i) => {
+      const item = document.createElement('div');
+      item.style.cssText = 'display:flex; align-items:flex-start; gap:10px; padding:10px 14px; background:var(--white); border:1.5px solid var(--border); border-radius:8px; cursor:pointer; transition: border-color 0.2s;';
+      item.innerHTML = `
+        <input type="checkbox" id="sug${i}" checked style="width:16px; height:16px; accent-color:var(--success); margin-top:3px; flex-shrink:0; cursor:pointer;" />
+        <label for="sug${i}" style="font-size:0.87rem; line-height:1.55; cursor:pointer; color:var(--ink);">${q}</label>`;
+      item.querySelector('input').addEventListener('change', function() {
+        item.style.borderColor = this.checked ? 'var(--success)' : 'var(--border)';
+        item.style.background = this.checked ? '#f0faf5' : 'var(--white)';
+      });
+      // Set initial checked state styling
+      item.style.borderColor = 'var(--success)';
+      item.style.background = '#f0faf5';
+      list.appendChild(item);
+    });
+    document.getElementById('suggestionsPanel').style.display = 'block';
+    document.getElementById('suggestionsPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function toggleAllSuggestions() {
+    const checkboxes = document.querySelectorAll('#suggestionsList input[type="checkbox"]');
+    const allChecked = [...checkboxes].every(c => c.checked);
+    checkboxes.forEach(c => {
+      c.checked = !allChecked;
+      c.dispatchEvent(new Event('change'));
+    });
+  }
+
+  function addSelectedSuggestions() {
+    const items = document.querySelectorAll('#suggestionsList input[type="checkbox"]');
+    const selected = [...items].filter(c => c.checked).map(c => c.nextElementSibling.textContent.trim());
+
+    if (selected.length === 0) {
+      alert('Please select at least one question to add.');
+      return;
+    }
+
+    const list = document.getElementById('questionsList');
+    // Remove empty placeholder rows first
+    [...list.querySelectorAll('.question-row')].forEach(row => {
+      if (!row.querySelector('textarea').value.trim()) row.remove();
+    });
+
+    const existingCount = list.children.length;
+    selected.forEach((q, i) => {
+      const row = document.createElement('div');
+      row.className = 'question-row';
+      row.innerHTML = `
+        <div class="q-number">${existingCount + i + 1}</div>
+        <textarea rows="2">${q}</textarea>
+        <button class="remove-btn" onclick="removeQuestion(this)">✕</button>`;
+      list.appendChild(row);
+    });
+
+    renumberQuestions();
+    closeSuggestions();
+    showToast(`${selected.length} question${selected.length > 1 ? 's' : ''} added!`);
+  }
+
+function closeSuggestions() {
+  document.getElementById('suggestionsPanel').style.display = 'none';
+  document.getElementById('suggestionsList').innerHTML = '';
+}
+
 function openBulkModal() {
   document.getElementById('bulkModal').classList.add('open');
   document.getElementById('bulkPasteInput').focus();
