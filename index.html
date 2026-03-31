@@ -711,7 +711,8 @@ async function previewStudy() {
       return;
     }
 
-    const previewUrl = `${PARTICIPANT_BASE}?study=${study_id}`;
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const previewUrl = `${PARTICIPANT_BASE}?study=${study_id}&preview_key=${encodeURIComponent(apiKey)}`;
     window.open(previewUrl, '_blank');
   }
 
