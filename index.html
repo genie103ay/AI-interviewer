@@ -223,7 +223,19 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--ac
 
 /* Questions */
 .questions-list { display: flex; flex-direction: column; gap: 10px; }
-.question-row { display: flex; align-items: flex-start; gap: 10px; }
+.question-row { display: flex; align-items: flex-start; gap: 10px; cursor: default; }
+.drag-handle {
+  color: var(--muted);
+  cursor: grab;
+  padding: 8px 4px;
+  margin-top: 4px;
+  font-size: 1rem;
+  flex-shrink: 0;
+  user-select: none;
+}
+.drag-handle:active { cursor: grabbing; }
+.question-row.sortable-ghost { opacity: 0.4; background: var(--accent-light); border-radius: 8px; }
+.question-row.sortable-chosen { background: var(--chat-bg); border-radius: 8px; }
 .q-number {
   min-width: 28px; height: 28px;
   background: var(--accent-light); color: var(--accent);
@@ -313,6 +325,7 @@ input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--ac
 }
 .toast.show { opacity: 1; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 </head>
 <body>
 
@@ -602,6 +615,7 @@ function showSetup(study = null) {
       const row = document.createElement('div');
       row.className = 'question-row';
       row.innerHTML = `
+        <div class="drag-handle">⠿</div>
         <div class="q-number">${i + 1}</div>
         <textarea rows="2">${q}</textarea>
         <button class="remove-btn" onclick="removeQuestion(this)">✕</button>`;
@@ -801,6 +815,7 @@ function addQuestion() {
   const row = document.createElement('div');
   row.className = 'question-row';
   row.innerHTML = `
+    <div class="drag-handle">⠿</div>
     <div class="q-number">${n}</div>
     <textarea placeholder="Type your question here…" rows="2"></textarea>
     <button class="remove-btn" onclick="removeQuestion(this)">✕</button>`;
@@ -941,6 +956,7 @@ async function suggestQuestions() {
       const row = document.createElement('div');
       row.className = 'question-row';
       row.innerHTML = `
+        <div class="drag-handle">⠿</div>
         <div class="q-number">${existingCount + i + 1}</div>
         <textarea rows="2">${q}</textarea>
         <button class="remove-btn" onclick="removeQuestion(this)">✕</button>`;
@@ -989,9 +1005,10 @@ function splitQuestions() {
     const row = document.createElement('div');
     row.className = 'question-row';
     row.innerHTML = `
-      <div class="q-number">${existingCount + i + 1}</div>
-      <textarea rows="2">${q}</textarea>
-      <button class="remove-btn" onclick="removeQuestion(this)">✕</button>`;
+        <div class="drag-handle">⠿</div>
+        <div class="q-number">${existingCount + i + 1}</div>
+        <textarea rows="2">${q}</textarea>
+        <button class="remove-btn" onclick="removeQuestion(this)">✕</button>`;
     list.appendChild(row);
   });
   renumberQuestions();
@@ -1000,6 +1017,18 @@ function splitQuestions() {
 
 // ── Init ──
 loadStudies();
+
+// ── Drag and drop for questions ──
+new Sortable(document.getElementById('questionsList'), {
+  handle: '.drag-handle',
+  animation: 150,
+  ghostClass: 'sortable-ghost',
+  chosenClass: 'sortable-chosen',
+  onEnd: function() {
+    renumberQuestions();
+  }
+});
+  
 </script>
 </body>
 </html>
