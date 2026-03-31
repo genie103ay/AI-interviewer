@@ -710,11 +710,10 @@ async function previewStudy() {
       showToast('Could not save study for preview.', 4000);
       return;
     }
-
-    const apiKey = document.getElementById('apiKey').value.trim();
     const previewUrl = `${PARTICIPANT_BASE}?study=${study_id}&preview_key=${encodeURIComponent(apiKey)}`;
     window.open(previewUrl, '_blank');
   }
+
 
 async function saveStudy(status, silent = false) {
   const apiKey = document.getElementById('apiKey').value.trim();
