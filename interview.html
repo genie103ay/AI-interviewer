@@ -383,6 +383,8 @@ async function startInterview() {
   const opening = await askClaude(buildSystemPrompt(), null, true);
   hideTyping();
   appendMessage('assistant', opening);
+  conversationHistory.push({ role: 'user', content: 'Please begin the interview.' });
+  conversationHistory.push({ role: 'assistant', content: opening });
   document.getElementById('chatInput').disabled = false;
   document.getElementById('sendBtn').disabled = false;
   document.getElementById('chatInput').focus();
