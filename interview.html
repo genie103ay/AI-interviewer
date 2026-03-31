@@ -368,7 +368,10 @@ function checkConsent() {
 }
 
 // ── Start interview ──
+let interviewStarted = false;
 async function startInterview() {
+  if (interviewStarted) return;
+  interviewStarted = true;
   document.getElementById('consentScreen').classList.add('hidden');
   document.getElementById('chatUI').classList.remove('hidden');
   document.getElementById('avatarInitial').textContent = (study.interviewer_name || 'A').charAt(0).toUpperCase();
