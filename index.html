@@ -511,6 +511,7 @@ PACING & FLOW
     </div>
     <div class="setup-footer-right">
       <button class="btn btn-secondary" onclick="saveStudy('draft')">Save as Draft</button>
+      <button class="btn btn-secondary" onclick="previewStudy()">Preview Study</button>
       <button class="btn btn-success" onclick="saveStudy('live')">Publish Study →</button>
     </div>
   </div>
@@ -689,7 +690,32 @@ async function editStudy(study_id) {
 }
 
 // ── Save study ──
-async function saveStudy(status) {
+async function previewStudy() {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const researchObjectives = document.getElementById('researchObjectives').value.trim();
+    const title = document.getElementById('studyTitle').value.trim();
+    const questions = [...document.querySelectorAll('#questionsList textarea')]
+      .map(t => t.value.trim()).filter(Boolean);
+
+    if (!apiKey) { alert('Please enter your Anthropic API key before previewing.'); return; }
+    if (!researchObjectives) { alert('Please add Research Objectives before previewing.'); return; }
+    if (!title) { alert('Please add a Study Title before previewing.'); return; }
+    if (questions.length === 0) { alert('Please add at least one question before previewing.'); return; }
+
+    showToast('Saving before preview…');
+    await saveStudy('draft', true);
+
+    const study_id = document.getElementById('currentStudyId').value;
+    if (!study_id) {
+      showToast('Could not save study for preview.', 4000);
+      return;
+    }
+
+    const previewUrl = `${PARTICIPANT_BASE}?study=${study_id}`;
+    window.open(previewUrl, '_blank');
+  }
+
+async function saveStudy(status, silent = false) {
   const apiKey = document.getElementById('apiKey').value.trim();
   const researchObjectives = document.getElementById('researchObjectives').value.trim();
   const title = document.getElementById('studyTitle').value.trim();
@@ -744,7 +770,7 @@ async function saveStudy(status) {
       const link = `${PARTICIPANT_BASE}?study=${data.study_id}`;
       document.getElementById('publishedLink').textContent = link;
       document.getElementById('publishModal').classList.add('open');
-    } else {
+    } else if (!silent) {
       showToast('Draft saved!');
     }
   } catch (err) {
