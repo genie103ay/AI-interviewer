@@ -323,7 +323,11 @@ async function init() {
     }
 
     study = data.study;
-    renderConsent();
+  // If a preview key was passed in the URL, use it
+  const previewKey = params.get('preview_key');
+  if (previewKey) study.api_key = previewKey;
+  renderConsent();
+    
   } catch (err) {
     showError();
   }
